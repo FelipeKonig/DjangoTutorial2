@@ -16,6 +16,18 @@
 
         <h2>{{ post.title }}</h2>
         <p>{{ post.text|linebreaksbr }}</p>
+        <div class="date heart">
+          {{ post.views}} views
+          <a href="{% url 'post_like' pk=post.pk %}">
+            {% if liked %}
+            <span class="glyphicon glyphicon-heart liked"></span>
+            {% else %}
+            <span class="glyphicon glyphicon-heart"></span>
+            {% endif %}
+          </a>
+           {{ post.likes_count }} &nbsp; | &nbsp;
+           {{ percent|floatformat:2 }} %
+        </div>
     </div>
     <hr>
     <a class="btn btn-default" href="{% url 'add_comment_to_post' pk=post.pk %}">Add comment</a>

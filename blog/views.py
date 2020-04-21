@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from .models import Post, Comment
+from .models import Post, Comment, PostLike
 from .forms import PostForm, CommentForm
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
@@ -11,7 +11,23 @@ def post_list(request):
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    return render(request, 'blog/post_detail.html', {'post': post})
+    post.views += 1
+    post.save()
+    liked = False
+    if request.user.is_authenticated:
+        likes_count = PostLike.objects.filter(
+            post_id=pk,
+            user=request.user
+        ).count()
+        if likes_count > 0:
+            liked = True
+
+    percent = post.likes_count() / post.views * 100
+
+    return render(request,
+    'blog/post_detail.html',
+     {'post': post, 'liked': liked, 'percent': percent}
+    )
 
 @login_required
 def post_new(request):
@@ -60,6 +76,15 @@ def post_remove(request, pk):
     post = get_object_or_404(Post, pk=pk)
     post.delete()
     return redirect('post_list')
+
+@login_required
+def post_like(request, pk):
+    postLike, created = PostLike.objects.get_or_create(
+        post_id=pk,
+        user=request.user
+    )
+
+    return redirect('post_detail', pk=pk)
 
 def add_comment_to_post(request, pk):
     post = get_object_or_404(Post, pk=pk)
