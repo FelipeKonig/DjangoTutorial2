@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from .models import Post, Comment, PostLike
+from .models import Post, Comment, PostLike, PostDislike
 from .forms import PostForm, CommentForm
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
@@ -13,7 +13,10 @@ def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     post.views += 1
     post.save()
+
     liked = False
+    disliked = False
+
     if request.user.is_authenticated:
         likes_count = PostLike.objects.filter(
             post_id=pk,
@@ -22,11 +25,24 @@ def post_detail(request, pk):
         if likes_count > 0:
             liked = True
 
-    percent = post.likes_count() / post.views * 100
+        dislikes_count = PostDislike.objects.filter(
+            post_id=pk,
+            user=request.user
+        ).count()
+        if dislikes_count > 0:
+            disliked = True
+
+    try:
+        percentApproved = post.likes_count() / ( post.likes_count() + post.dislikes_count()) * 100
+        percentDisapproved = post.dislikes_count() / ( post.dislikes_count() +  post.likes_count()) * 100
+    except:
+        percentApproved = 0
+        percentDisapproved = 0
 
     return render(request,
     'blog/post_detail.html',
-     {'post': post, 'liked': liked, 'percent': percent}
+     {'post': post, 'liked': liked, 'disliked': disliked,
+      'percentApproved': percentApproved, 'percentDisapproved': percentDisapproved}
     )
 
 @login_required
@@ -80,6 +96,15 @@ def post_remove(request, pk):
 @login_required
 def post_like(request, pk):
     postLike, created = PostLike.objects.get_or_create(
+        post_id=pk,
+        user=request.user
+    )
+
+    return redirect('post_detail', pk=pk)
+
+@login_required
+def post_dislike(request, pk):
+    postDislike, created = PostDislike.objects.get_or_create(
         post_id=pk,
         user=request.user
     )

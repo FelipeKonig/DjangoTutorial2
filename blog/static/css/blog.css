@@ -1,9 +1,13 @@
-.heart{
+.thumbs{
   font-size: 20px;
 }
 
 .liked{
-  color: #F00;
+  color: #0a820a;
+}
+
+.disliked{
+  color: #c41414;
 }
 
 h1 a, h2 a {
